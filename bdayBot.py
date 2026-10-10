@@ -142,7 +142,7 @@ async def on_ready():
     date="Birthdays have the format: DD.MM., for example: 27.02."
 )
 @app_commands.default_permissions(manage_guild=True)
-@app_commands.check.has_permissions(manage_channels=True)
+@app_commands.checks.has_permissions(manage_channels=True)
 async def add_birthday(
     interaction: discord.Interaction,
     person: discord.Member,
@@ -184,7 +184,7 @@ async def add_birthday(
     person="The person, whose birthday shall be removed."
 )
 @app_commands.default_permissions(manage_guild=True)
-@app_commands.check.has_permissions(manage_channels=True)
+@app_commands.checks.has_permissions(manage_channels=True)
 async def remove_birthday(
     interaction: discord.Interaction,
     person: discord.Member
@@ -214,8 +214,8 @@ async def remove_birthday(
     guild=GUILD
 )
 @app_commands.default_permissions(manage_guild=True)
-@app_commands.check.has_permissions(manage_channels=True)
-async def birthdaylist(interaction: discord.interaction):
+@app_commands.checks.has_permissions(manage_channels=True)
+async def birthdaylist(interaction: discord.Interaction):
     birthdays = load_json(BIRTHDAYS_FILE)
     if not birthdays:
         await interaction.response.send_message(
@@ -255,7 +255,7 @@ async def birthdaylist(interaction: discord.interaction):
         person="Test person for this test message."
     )
     @app_commands.default_permissions(manage_guild=True)
-    @app_commands.check.has_permissions(manage_channels=True)
+    @app_commands.checks.has_permissions(manage_channels=True)
     async def birthday_test(
         interaction: discord.Interaction,
         person: discord.Member
