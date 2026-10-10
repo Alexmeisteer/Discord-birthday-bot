@@ -33,7 +33,7 @@ def load_json(path: Path) -> dict:
 
 def save_json(path: Path, data: dict):
     with path.open("w", encoding="utf-8") as file:
-        json.dump(data, file, enscure_ascii=False, indent=4)
+        json.dump(data, file, ensure_ascii=False, indent=4)
 
 def parse_birthday(date_string: str):
     """
@@ -66,7 +66,6 @@ class BirthdayBot(discord.Client):
 intents = discord.Intents.default()
 client = BirthdayBot(intents=intents)
 tree = app_commands.CommandTree(client)
-client = BirthdayBot(intents=intents)
 
 #
 # Events 
@@ -120,7 +119,7 @@ async def birthday_check():
 
 @birthday_check.before_loop
 async def before_birthday_check():
-    await client.await_until_ready()
+    await client.wait_until_ready()
     
 
 
@@ -206,7 +205,7 @@ async def remove_birthday(
         ephemeral=True
     )
 
-    # Show birthday list
+# Show birthday list
 
 @tree.command(
     name="birthdaylist",
@@ -245,40 +244,62 @@ async def birthdaylist(interaction: discord.Interaction):
     )
 
 
-    # Testing bot command 
-    @tree.command(
-        name="birthday_test",
-        description="Sends a test message.",
-        guild=GUILD
+# Test bot command
+@tree.command(
+    name="birthday_test",
+    description="Sends a test birthday message.",
+    guild=GUILD
+)
+@app_commands.describe(person="Test person for this message.")
+@app_commands.default_permissions(manage_guild=True)
+@app_commands.checks.has_permissions(manage_guild=True)
+async def birthday_test(
+    interaction: discord.Interaction,
+    person: discord.Member
+):
+    channel = client.get_channel(BIRTHDAY_CHANNEL_ID)
+
+    if channel is None:
+        try:
+            channel = await client.fetch_channel(BIRTHDAY_CHANNEL_ID)
+
+        except discord.DiscordException:
+            await interaction.response.send_message("Birthday channel was not found.",ephemeral=True)
+            return
+
+    message = (
+        f"🎊🎊🎉🎉 **HAPPY BIRTHDAY "
+        f"{person.mention}!** 🎉🎉🎊🎊\n"
+        f"🍰 We wish you an amazing day! 🎂"
     )
-    @app_commands.describe(
-        person="Test person for this test message."
-    )
-    @app_commands.default_permissions(manage_guild=True)
-    @app_commands.checks.has_permissions(manage_channels=True)
-    async def birthday_test(
-        interaction: discord.Interaction,
-        person: discord.Member
+
+    if BIRTHDAY_GIF_URL:
+        message += f"\n{BIRTHDAY_GIF_URL}"
+
+    await channel.send(message)
+    await interaction.response.send_message("Test message was sent. Did it work?",ephemeral=True)
+
+# Error handling
+@tree.error
+async def on_app_command_error(
+    interaction: discord.Interaction,
+    error: app_commands.AppCommandError
+):
+    if isinstance(
+        error,
+        app_commands.MissingPermissions
     ):
-        channel = client.get_channel(BIRTHDAY_CHANNEL_ID)
-        if channel is None:
-            try: 
-                channel = await client.fetch_channel(BIRTHDAY_CHANNEL_ID)
-            except discord.DiscordException:
-                await interaction.response.send_message("Birthday channel was not found.", ephemeral=True)
-                return
+        await interaction.response.send_message(
+            "You do not have permission to use this command.",
+            ephemeral=True
+        )
+        return
 
-        message = (
-                f"🎊🎊🎉🎉**HAPPY BIRTHDAY <@{user_id}>🎉🎉🎊🎊\n"
-                f"🍰 We wish you an amazing day! 🎂"
-            )
-        if BIRTHDAY_GIF_URL:
-            message += f"\n{BIRTHDAY_GIF_URL}"
+    raise error
 
-        await channel.send(message)
-        await interaction.response.send_message("Testmessage was sent. Did it work?", ephemeral=True)
 
-    # Start bot 
-    if not TOKEN:
-        raise RuntimeError("Discord_TOKEN was not found in .env!")
-    client.run(TOKEN)
+# Start bot 
+if not TOKEN:
+    raise RuntimeError("Discord_TOKEN was not found in .env!")
+
+client.run(TOKEN)
