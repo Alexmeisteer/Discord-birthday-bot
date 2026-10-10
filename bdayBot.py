@@ -72,7 +72,7 @@ client = BirthdayBot(intents=intents)
 # Events 
 #
 
-# Check for birthday
+# Check automatically for birthday
 @tasks.loop(minutes=30)
 async def birthday_check():
     now = datetime.now(TIMEZONE)
@@ -142,6 +142,7 @@ async def on_ready():
     date="Birthdays have the format: DD.MM., for example: 27.02."
 )
 @app_commands.default_permissions(manage_guild=True)
+@app_commands.check.has_permissions(manage_channels=True)
 async def add_birthday(
     interaction: discord.Interaction,
     person: discord.Member,
@@ -183,6 +184,7 @@ async def add_birthday(
     person="The person, whose birthday shall be removed."
 )
 @app_commands.default_permissions(manage_guild=True)
+@app_commands.check.has_permissions(manage_channels=True)
 async def remove_birthday(
     interaction: discord.Interaction,
     person: discord.Member
@@ -206,7 +208,75 @@ async def remove_birthday(
 
     # Show birthday list
 
+@tree.command(
+    name="birthdaylist",
+    description="Shows every saved birthday.",
+    guild=GUILD
+)
+@app_commands.default_permissions(manage_guild=True)
+@app_commands.check.has_permissions(manage_channels=True)
+async def birthdaylist(interaction: discord.interaction):
+    birthdays = load_json(BIRTHDAYS_FILE)
+    if not birthdays:
+        await interaction.response.send_message(
+            "There are not saved birthdays.",
+            ephemeral=True
+        )
+        return
 
+    sorted_birthdays = sorted(
+        birthdays.items(),
+        # sort by month, then by day 
+        key=lambda item: (item[1]["month"], item[2]["day"])
+    )
+    lines = []
+
+    for user_id, birthday in sorted_birthdays:
+        lines.append(
+            f"<@{user_id}> birthday in "
+            f"{birthday['day']:02d}.{birthday['month']:02d}."
+        )
+    
+    text = "\n".join(lines)
+
+    await interaction.response.send_message(
+        f"**Saved Birthdays: ** \n \n{text}",
+        ephemeral=True
+    )
+
+
+    # Testing bot command 
+    @tree.command(
+        name="birthday_test",
+        description="Sends a test message.",
+        guild=GUILD
+    )
+    @app_commands.describe(
+        person="Test person for this test message."
+    )
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.check.has_permissions(manage_channels=True)
+    async def birthday_test(
+        interaction: discord.Interaction,
+        person: discord.Member
+    ):
+        channel = client.get_channel(BIRTHDAY_CHANNEL_ID)
+        if channel is None:
+            try: 
+                channel = await client.fetch_channel(BIRTHDAY_CHANNEL_ID)
+            except discord.DiscordException:
+                await interaction.response.send_message("Birthday channel was not found.", ephemeral=True)
+                return
+
+        message = (
+                f"🎊🎊🎉🎉**HAPPY BIRTHDAY <@{user_id}>🎉🎉🎊🎊\n"
+                f"🍰 We wish you an amazing day! 🎂"
+            )
+        if BIRTHDAY_GIF_URL:
+            message += f"\n{BIRTHDAY_GIF_URL}"
+
+        await channel.send(message)
+        await interaction.response.send_message("Testmessage was sent. Did it work?", ephemeral=True)
 
     # Start bot 
     if not TOKEN:
