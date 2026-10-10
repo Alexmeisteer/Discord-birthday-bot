@@ -206,40 +206,41 @@ async def remove_birthday(
     )
 
 # Show birthday list
-
 @tree.command(
     name="birthdaylist",
     description="Shows every saved birthday.",
     guild=GUILD
 )
 @app_commands.default_permissions(manage_guild=True)
-@app_commands.checks.has_permissions(manage_channels=True)
+@app_commands.checks.has_permissions(manage_guild=True)
 async def birthdaylist(interaction: discord.Interaction):
     birthdays = load_json(BIRTHDAYS_FILE)
+
     if not birthdays:
-        await interaction.response.send_message(
-            "There are not saved birthdays.",
-            ephemeral=True
-        )
+        await interaction.response.send_message("There are no saved birthdays.",ephemeral=True)
         return
 
     sorted_birthdays = sorted(
         birthdays.items(),
-        # sort by month, then by day 
-        key=lambda item: (item[1]["month"], item[2]["day"])
+        key=lambda item: (
+            item[1]["month"],
+            item[1]["day"]
+        )
     )
+
     lines = []
 
     for user_id, birthday in sorted_birthdays:
         lines.append(
-            f"<@{user_id}> birthday in "
-            f"{birthday['day']:02d}.{birthday['month']:02d}."
+            f"<@{user_id}> — "
+            f"{birthday['day']:02d}."
+            f"{birthday['month']:02d}."
         )
-    
+
     text = "\n".join(lines)
 
     await interaction.response.send_message(
-        f"**Saved Birthdays: ** \n \n{text}",
+        f"**Saved Birthdays:**\n\n{text}",
         ephemeral=True
     )
 
