@@ -19,8 +19,10 @@ TIMEZONE = ZoneInfo("Europe/Berlin")
 
 # Birthday message will be sent at 8am CEST
 SEND_FROM_HOUR = 8
-BIRTHDAYS_FILE=Path("birthdays.json")
-SENT_FILE=Path("sent_birthdays.json")
+DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+BIRTHDAYS_FILE = DATA_DIR / "birthdays.json"
+SENT_FILE = DATA_DIR / "sent_birthdays.json"
 GUILD = discord.Object(id=GUILD_ID)
 
 
